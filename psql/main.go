@@ -51,7 +51,7 @@ DELETE FROM table_b;
 			return err
 		}
 
-		_,_= tx.Exec("SELECT * FROM table_a WHERE id=$1", "c91e8117-b8c2-4972-ae7f-53cd6b3eeebc")
+		_, _ = tx.Exec("SELECT * FROM table_a WHERE id=$1", "c91e8117-b8c2-4972-ae7f-53cd6b3eeebc")
 		// _,_= tx.Exec("INSERT INTO table_b (id, table_a_id) VALUES ($1, $2)", "88b2d8ee-7988-4040-b91e-36531930d9a5", "c91e8117-b8c2-4972-ae7f-53cd6b3eeebc")
 
 		// fails

@@ -23,7 +23,7 @@ func TestPersister(p interface {
 	identity.PrivilegedPool
 }) func(t *testing.T) {
 	viper.Set(configuration.ViperKeyDefaultIdentityTraitsSchemaURL, "file://./stub/identity.schema.json")
-  viper.Set(configuration.ViperKeySecretsSession, []string{"secret-a", "secret-b"})
+	viper.Set(configuration.ViperKeySecretsSession, []string{"secret-a", "secret-b"})
 	return func(t *testing.T) {
 		t.Run("case=should error when the recovery token does not exist", func(t *testing.T) {
 			_, err := p.UseRecoveryToken(context.Background(), "i-do-not-exist")
@@ -65,9 +65,36 @@ func TestPersister(p interface {
 			assertx.EqualAsJSON(t, expected.RecoveryAddress, actual.RecoveryAddress)
 			assert.Equal(t, expected.RecoveryAddress.IdentityID, actual.RecoveryAddress.IdentityID)
 			assert.NotEqual(t, expected.Token, actual.Token)
-      
-      _, err = p.UseRecoveryToken(context.Background(), expected.Token)
+
+			_, err = p.UseRecoveryToken(context.Background(), expected.Token)
 			require.Error(t, err)
+		})
+
+		t.Run("case=should be able to rotate secrets", func(t *testing.T) {
+			viper.Set(configuration.ViperKeySecretsSession, []string{"secret-a"})
+
+			expected := newRecoveryToken(t, "rotate-secrets@ory.sh")
+			require.NoError(t, p.CreateRecoveryToken(context.Background(), expected))
+
+			viper.Set(configuration.ViperKeySecretsSession, []string{"secret-b", "secret-a"})
+
+			actual, err := p.UseRecoveryToken(context.Background(), expected.Token)
+			require.NoError(t, err)
+			assertx.EqualAsJSON(t, expected.RecoveryAddress, actual.RecoveryAddress)
+		})
+
+		t.Run("case=should invalidate the right token", func(t *testing.T) {
+			first := newRecoveryToken(t, "multiple-1@ory.sh")
+			require.NoError(t, p.CreateRecoveryToken(context.Background(), first))
+
+			second := newRecoveryToken(t, "multiple-2@ory.sh")
+			require.NoError(t, p.CreateRecoveryToken(context.Background(), second))
+
+			_, err := p.UseRecoveryToken(context.Background(), second.Token)
+			require.NoError(t, err)
+
+			_, err = p.UseRecoveryToken(context.Background(), first.Token)
+			require.NoError(t, err)
 		})
 	}
 }
