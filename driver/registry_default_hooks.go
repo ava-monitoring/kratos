@@ -26,6 +26,13 @@ func (m *RegistryDefault) HookSessionDestroyer() *hook.SessionDestroyer {
 	return m.hookSessionDestroyer
 }
 
+func (m *RegistryDefault) HookTokenDestroyer() *hook.TokenDestroyer {
+	if m.hookTokenDestroyer == nil {
+		m.hookTokenDestroyer = hook.NewTokenDestroyer(m)
+	}
+	return m.hookTokenDestroyer
+}
+
 func (m *RegistryDefault) HookAddressVerifier() *hook.AddressVerifier {
 	if m.hookAddressVerifier == nil {
 		m.hookAddressVerifier = hook.NewAddressVerifier()
@@ -48,6 +55,8 @@ func (m *RegistryDefault) getHooks(credentialsType string, configs []config.Self
 			i = append(i, hook.NewWebHook(m, h.Config))
 		case hook.KeyAddressVerifier:
 			i = append(i, m.HookAddressVerifier())
+		case hook.KeyTokenDestroyer:
+			i = append(i, m.HookTokenDestroyer())
 		default:
 			var found bool
 			for name, m := range m.injectedSelfserviceHooks {

@@ -129,7 +129,7 @@ format: .bin/goimports docs/node_modules node_modules
 # Runs tests in short mode, without database adapters
 .PHONY: docker
 docker:
-		docker build -f .docker/Dockerfile-build -t oryd/kratos:latest-sqlite .
+		docker build -f .docker/Dockerfile-build -t oryd/kratos:latest .
 
 # Runs the documentation tests
 .PHONY: test-docs
