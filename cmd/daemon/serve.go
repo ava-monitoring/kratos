@@ -82,6 +82,16 @@ func ServePublic(r driver.Registry, wg *sync.WaitGroup, cmd *cobra.Command, args
 	for _, mw := range modifiers.mwf {
 		n.UseFunc(mw)
 	}
+	publicLogger := reqlog.NewMiddlewareFromLogger(
+		l,
+		"public#"+c.SelfPublicURL(nil).String(),
+	)
+	if r.Config(ctx).DisablePublicHealthRequestLog() {
+		publicLogger.ExcludePaths(healthx.AliveCheckPath, healthx.ReadyCheckPath)
+	}
+	n.Use(publicLogger)
+	n.Use(sqa(ctx, cmd, r))
+	n.Use(r.PrometheusManager())
 
 	router := x.NewRouterPublic()
 	csrf := x.NewCSRFHandler(router, r)
@@ -90,11 +100,14 @@ func ServePublic(r driver.Registry, wg *sync.WaitGroup, cmd *cobra.Command, args
 	r.WithCSRFHandler(csrf)
 	n.UseHandler(r.CSRFHandler())
 
+	// Disable CSRF for these endpoints
+	csrf.DisablePath(healthx.AliveCheckPath)
+	csrf.DisablePath(healthx.ReadyCheckPath)
+	csrf.DisablePath(healthx.VersionPath)
+	csrf.DisablePath(prometheus.MetricsPrometheusPath)
+
 	r.RegisterPublicRoutes(ctx, router)
 	r.PrometheusManager().RegisterRouter(router.Router)
-	n.Use(reqlog.NewMiddlewareFromLogger(l, "public#"+c.SelfPublicURL(nil).String()))
-	n.Use(sqa(ctx, cmd, r))
-	n.Use(r.PrometheusManager())
 
 	if tracer := r.Tracer(ctx); tracer.IsLoaded() {
 		n.Use(tracer)
@@ -141,13 +154,20 @@ func ServeAdmin(r driver.Registry, wg *sync.WaitGroup, cmd *cobra.Command, args 
 	for _, mw := range modifiers.mwf {
 		n.UseFunc(mw)
 	}
+	adminLogger := reqlog.NewMiddlewareFromLogger(
+		l,
+		"admin#"+c.SelfPublicURL(nil).String(),
+	)
+	if r.Config(ctx).DisableAdminHealthRequestLog() {
+		adminLogger.ExcludePaths(healthx.AliveCheckPath, healthx.ReadyCheckPath)
+	}
+	n.Use(adminLogger)
+	n.Use(sqa(ctx, cmd, r))
+	n.Use(r.PrometheusManager())
 
 	router := x.NewRouterAdmin()
 	r.RegisterAdminRoutes(ctx, router)
 	r.PrometheusManager().RegisterRouter(router.Router)
-	n.Use(reqlog.NewMiddlewareFromLogger(l, "admin#"+c.SelfPublicURL(nil).String()))
-	n.Use(sqa(ctx, cmd, r))
-	n.Use(r.PrometheusManager())
 
 	if tracer := r.Tracer(ctx); tracer.IsLoaded() {
 		n.Use(tracer)

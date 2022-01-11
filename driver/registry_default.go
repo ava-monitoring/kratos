@@ -7,6 +7,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gobuffalo/pop/v5"
+
+	"github.com/ory/nosurf"
+
+	"github.com/ory/kratos/selfservice/strategy/webauthn"
+
+	"github.com/ory/kratos/selfservice/strategy/lookup"
+
+	"github.com/ory/kratos/selfservice/strategy/totp"
+
 	"github.com/luna-duclos/instrumentedsql"
 	"github.com/luna-duclos/instrumentedsql/opentracing"
 
@@ -14,8 +24,7 @@ import (
 
 	prometheus "github.com/ory/x/prometheusx"
 
-	"github.com/gobuffalo/pop/v5"
-
+	"github.com/ory/kratos/cipher"
 	"github.com/ory/kratos/continuity"
 	"github.com/ory/kratos/hash"
 	"github.com/ory/kratos/schema"
@@ -63,7 +72,7 @@ type RegistryDefault struct {
 
 	injectedSelfserviceHooks map[string]func(config.SelfServiceHook) interface{}
 
-	nosurf         x.CSRFHandler
+	nosurf         nosurf.Handler
 	trc            *tracing.Tracer
 	pmm            *prometheus.MetricsManager
 	writer         herodot.Writer
@@ -91,6 +100,8 @@ type RegistryDefault struct {
 
 	passwordHasher    hash.Hasher
 	passwordValidator password2.Validator
+
+	crypter cipher.Cipher
 
 	errorHandler *errorx.Handler
 	errorManager *errorx.Manager
@@ -167,6 +178,7 @@ func (m *RegistryDefault) RegisterAdminRoutes(ctx context.Context, router *x.Rou
 
 	m.RecoveryHandler().RegisterAdminRoutes(router)
 	m.AllRecoveryStrategies().RegisterAdminRoutes(router)
+	m.SessionHandler().RegisterAdminRoutes(router)
 
 	m.VerificationHandler().RegisterAdminRoutes(router)
 	m.AllVerificationStrategies().RegisterAdminRoutes(router)
@@ -230,11 +242,11 @@ func (m *RegistryDefault) MetricsHandler() *prometheus.Handler {
 	return m.metricsHandler
 }
 
-func (m *RegistryDefault) WithCSRFHandler(c x.CSRFHandler) {
+func (m *RegistryDefault) WithCSRFHandler(c nosurf.Handler) {
 	m.nosurf = c
 }
 
-func (m *RegistryDefault) CSRFHandler() x.CSRFHandler {
+func (m *RegistryDefault) CSRFHandler() nosurf.Handler {
 	if m.nosurf == nil {
 		panic("csrf handler is not set")
 	}
@@ -248,6 +260,14 @@ func (m *RegistryDefault) Config(ctx context.Context) *config.Config {
 	return corp.ContextualizeConfig(ctx, m.c)
 }
 
+func (m *RegistryDefault) CourierConfig(ctx context.Context) courier.SMTPConfig {
+	return m.Config(ctx)
+}
+
+func (m *RegistryDefault) SMTPConfig(ctx context.Context) courier.SMTPConfig {
+	return m.Config(ctx)
+}
+
 func (m *RegistryDefault) selfServiceStrategies() []interface{} {
 	if len(m.selfserviceStrategies) == 0 {
 		m.selfserviceStrategies = []interface{}{
@@ -255,6 +275,9 @@ func (m *RegistryDefault) selfServiceStrategies() []interface{} {
 			oidc.NewStrategy(m),
 			profile.NewStrategy(m),
 			link.NewStrategy(m),
+			totp.NewStrategy(m),
+			webauthn.NewStrategy(m),
+			lookup.NewStrategy(m),
 		}
 	}
 
@@ -359,6 +382,21 @@ func (m *RegistryDefault) SessionHandler() *session.Handler {
 		m.sessionHandler = session.NewHandler(m)
 	}
 	return m.sessionHandler
+}
+
+func (m *RegistryDefault) Cipher() cipher.Cipher {
+	if m.crypter == nil {
+		switch m.c.CipherAlgorithm() {
+		case "xchacha20-poly1305":
+			m.crypter = cipher.NewCryptChaCha20(m)
+		case "aes":
+			m.crypter = cipher.NewCryptAES(m)
+		default:
+			m.crypter = cipher.NewNoop(m)
+			m.l.Logger.Warning("No encryption configuration found. Default algorithm (noop) will be use that mean sensitive data will be recorded in plaintext")
+		}
+	}
+	return m.crypter
 }
 
 func (m *RegistryDefault) Hasher() hash.Hasher {
@@ -550,7 +588,7 @@ func (m *RegistryDefault) SetPersister(p persistence.Persister) {
 }
 
 func (m *RegistryDefault) Courier(ctx context.Context) *courier.Courier {
-	return courier.NewSMTP(m, m.Config(ctx))
+	return courier.NewSMTP(ctx, m)
 }
 
 func (m *RegistryDefault) ContinuityManager() continuity.Manager {
@@ -638,7 +676,7 @@ func (m *RegistryDefault) PrometheusManager() *prometheus.MetricsManager {
 	m.rwl.Lock()
 	defer m.rwl.Unlock()
 	if m.pmm == nil {
-		m.pmm = prometheus.NewMetricsManager("kratos", m.buildVersion, m.buildHash, m.buildDate)
+		m.pmm = prometheus.NewMetricsManagerWithPrefix("kratos", prometheus.HTTPMetrics, m.buildVersion, m.buildHash, m.buildDate)
 	}
 	return m.pmm
 }

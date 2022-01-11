@@ -709,6 +709,24 @@ selfservice:
       #
       privileged_session_max_age: 1h
 
+      ## Required Authenticator Assurance Level ##
+      #
+      # Sets what Authenticator Assurance Level (used for 2FA) is required to access this feature. If set to `highest_available` then this endpoint requires the highest AAL the identity has set up. If set to `aal1` then the identity can access this feature without 2FA.
+      #
+      # Default value: highest_available
+      #
+      # One of:
+      # - aal1
+      # - highest_available
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SELFSERVICE_FLOWS_SETTINGS_REQUIRED_AAL=<value>
+      # - Windows Command Line (CMD):
+      #    > set SELFSERVICE_FLOWS_SETTINGS_REQUIRED_AAL=<value>
+      #
+      required_aal: aal1
+
       ## after ##
       #
       after:
@@ -964,6 +982,132 @@ selfservice:
       #
       enabled: false
 
+    ## totp ##
+    #
+    totp:
+      ## TOTP Configuration ##
+      #
+      config:
+        ## TOTP Issuer ##
+        #
+        # The issuer (e.g. a domain name) will be shown in the TOTP app (e.g. Google Authenticator). It helps the user differentiate between different codes.
+        #
+        # Set this value using environment variables on
+        # - Linux/macOS:
+        #    $ export SELFSERVICE_METHODS_TOTP_CONFIG_ISSUER=<value>
+        # - Windows Command Line (CMD):
+        #    > set SELFSERVICE_METHODS_TOTP_CONFIG_ISSUER=<value>
+        #
+        issuer: ''
+
+      ## Enables the TOTP method ##
+      #
+      # Default value: false
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SELFSERVICE_METHODS_TOTP_ENABLED=<value>
+      # - Windows Command Line (CMD):
+      #    > set SELFSERVICE_METHODS_TOTP_ENABLED=<value>
+      #
+      enabled: false
+
+    ## lookup_secret ##
+    #
+    lookup_secret:
+      ## Enables the lookup secret method ##
+      #
+      # Default value: false
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SELFSERVICE_METHODS_LOOKUP_SECRET_ENABLED=<value>
+      # - Windows Command Line (CMD):
+      #    > set SELFSERVICE_METHODS_LOOKUP_SECRET_ENABLED=<value>
+      #
+      enabled: false
+
+    ## webauthn ##
+    #
+    webauthn:
+      ## WebAuthn Configuration ##
+      #
+      config:
+        ## Relying Party (RP) Config ##
+        #
+        rp:
+          ## Relying Party Identifier ##
+          #
+          # The id must be a subset of the domain currently in the browser.
+          #
+          # Examples:
+          # - ory.sh
+          #
+          # Set this value using environment variables on
+          # - Linux/macOS:
+          #    $ export SELFSERVICE_METHODS_WEBAUTHN_CONFIG_RP_ID=<value>
+          # - Windows Command Line (CMD):
+          #    > set SELFSERVICE_METHODS_WEBAUTHN_CONFIG_RP_ID=<value>
+          #
+          id: ory.sh
+
+          ## Relying Party Display Name ##
+          #
+          # An name to help the user identify this RP.
+          #
+          # Examples:
+          # - Ory Foundation
+          #
+          # Set this value using environment variables on
+          # - Linux/macOS:
+          #    $ export SELFSERVICE_METHODS_WEBAUTHN_CONFIG_RP_DISPLAY_NAME=<value>
+          # - Windows Command Line (CMD):
+          #    > set SELFSERVICE_METHODS_WEBAUTHN_CONFIG_RP_DISPLAY_NAME=<value>
+          #
+          display_name: Ory Foundation
+
+          ## Relying Party Icon ##
+          #
+          # An icon to help the user identify this RP.
+          #
+          # Examples:
+          # - https://www.ory.sh/an-icon.png
+          #
+          # Set this value using environment variables on
+          # - Linux/macOS:
+          #    $ export SELFSERVICE_METHODS_WEBAUTHN_CONFIG_RP_ICON=<value>
+          # - Windows Command Line (CMD):
+          #    > set SELFSERVICE_METHODS_WEBAUTHN_CONFIG_RP_ICON=<value>
+          #
+          icon: https://www.ory.sh/an-icon.png
+
+          ## Relying Party Origin ##
+          #
+          # An explicit RP origin. If left empty, this defaults to `id`.
+          #
+          # Examples:
+          # - https://www.ory.sh/login
+          #
+          # Set this value using environment variables on
+          # - Linux/macOS:
+          #    $ export SELFSERVICE_METHODS_WEBAUTHN_CONFIG_RP_ORIGIN=<value>
+          # - Windows Command Line (CMD):
+          #    > set SELFSERVICE_METHODS_WEBAUTHN_CONFIG_RP_ORIGIN=<value>
+          #
+          origin: https://www.ory.sh/login
+
+      ## Enables the WebAuthn method ##
+      #
+      # Default value: false
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SELFSERVICE_METHODS_WEBAUTHN_ENABLED=<value>
+      # - Windows Command Line (CMD):
+      #    > set SELFSERVICE_METHODS_WEBAUTHN_ENABLED=<value>
+      #
+      enabled: false
+
     ## Specify OpenID Connect and OAuth2 Configuration ##
     #
     # Set this value using environment variables on
@@ -992,14 +1136,20 @@ selfservice:
           - id: google
             provider: google
             client_id: ''
-            client_secret: ''
             mapper_url: file://path/to/oidc.jsonnet
+            client_secret: ''
             issuer_url: https://accounts.google.com
             auth_url: https://accounts.google.com/o/oauth2/v2/auth
             token_url: https://www.googleapis.com/oauth2/v4/token
             scope:
               - offline_access
             tenant: common
+            team_id: KP76DQS54M
+            private_key_id: UX56C66723
+            private_key: |-
+              -----BEGIN PRIVATE KEY-----
+              ........
+              -----END PRIVATE KEY-----
             requested_claims:
               id_token:
                 email:
@@ -1059,6 +1209,148 @@ serve:
   ## public ##
   #
   public:
+    ## cors ##
+    #
+    # Configures Cross Origin Resource Sharing for public endpoints.
+    #
+    cors:
+      ## allowed_origins ##
+      #
+      # A list of origins a cross-domain request can be executed from. If the special * value is present in the list, all origins will be allowed. An origin may contain a wildcard (*) to replace 0 or more characters (i.e.: http://*.domain.com). Only one wildcard can be used per origin.
+      #
+      # Default value: *
+      #
+      # Examples:
+      # - - https://example.com
+      #   - https://*.example.com
+      #   - https://*.foo.example.com
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_ALLOWED_ORIGINS=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_ALLOWED_ORIGINS=<value>
+      #
+      allowed_origins:
+        - https://example.com
+        - https://*.example.com
+        - https://*.foo.example.com
+
+      ## allowed_methods ##
+      #
+      # A list of HTTP methods the user agent is allowed to use with cross-domain requests.
+      #
+      # Default value: POST,GET,PUT,PATCH,DELETE
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_ALLOWED_METHODS=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_ALLOWED_METHODS=<value>
+      #
+      allowed_methods:
+        - POST
+
+      ## allowed_headers ##
+      #
+      # A list of non simple headers the client is allowed to use with cross-domain requests.
+      #
+      # Default value: Authorization,Content-Type,X-Session-Token
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_ALLOWED_HEADERS=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_ALLOWED_HEADERS=<value>
+      #
+      allowed_headers:
+        - ''
+
+      ## exposed_headers ##
+      #
+      # Sets which headers are safe to expose to the API of a CORS API specification.
+      #
+      # Default value: Content-Type
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_EXPOSED_HEADERS=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_EXPOSED_HEADERS=<value>
+      #
+      exposed_headers:
+        - ''
+
+      ## allow_credentials ##
+      #
+      # Sets whether the request can include user credentials like cookies, HTTP authentication or client side SSL certificates.
+      #
+      # Default value: true
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_ALLOW_CREDENTIALS=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_ALLOW_CREDENTIALS=<value>
+      #
+      allow_credentials: false
+
+      ## options_passthrough ##
+      #
+      # TODO
+      #
+      # Default value: false
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_OPTIONS_PASSTHROUGH=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_OPTIONS_PASSTHROUGH=<value>
+      #
+      options_passthrough: false
+
+      ## max_age ##
+      #
+      # Sets how long (in seconds) the results of a preflight request can be cached. If set to 0, every request is preceded by a preflight request.
+      #
+      # Minimum value: 0
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_MAX_AGE=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_MAX_AGE=<value>
+      #
+      max_age: 0
+
+      ## debug ##
+      #
+      # Adds additional log output to debug server side CORS issues.
+      #
+      # Default value: false
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_DEBUG=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_DEBUG=<value>
+      #
+      debug: false
+
+      ## enabled ##
+      #
+      # Sets whether CORS is enabled.
+      #
+      # Default value: false
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_PUBLIC_CORS_ENABLED=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_PUBLIC_CORS_ENABLED=<value>
+      #
+      enabled: false
+
     ## Base URL ##
     #
     # The URL where the endpoint is exposed at. This domain is used to generate redirects, form URLs, and more.
@@ -1223,151 +1515,41 @@ serve:
         #
         path: path/to/file.pem
 
-    ## cors ##
+    ## request_log ##
     #
-    # Configures Cross Origin Resource Sharing for public endpoints.
-    #
-    cors:
-      ## allowed_origins ##
+    request_log:
+      ## Disable health endpoints request logging ##
       #
-      # A list of origins a cross-domain request can be executed from. If the special * value is present in the list, all origins will be allowed. An origin may contain a wildcard (*) to replace 0 or more characters (i.e.: http://*.domain.com). Only one wildcard can be used per origin.
-      #
-      # Default value: *
-      #
-      # Examples:
-      # - - https://example.com
-      #   - https://*.example.com
-      #   - https://*.foo.example.com
-      #
-      # Set this value using environment variables on
-      # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_ALLOWED_ORIGINS=<value>
-      # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_ALLOWED_ORIGINS=<value>
-      #
-      allowed_origins:
-        - https://example.com
-        - https://*.example.com
-        - https://*.foo.example.com
-
-      ## allowed_methods ##
-      #
-      # A list of HTTP methods the user agent is allowed to use with cross-domain requests.
-      #
-      # Default value: POST,GET,PUT,PATCH,DELETE
-      #
-      # Set this value using environment variables on
-      # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_ALLOWED_METHODS=<value>
-      # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_ALLOWED_METHODS=<value>
-      #
-      allowed_methods:
-        - POST
-
-      ## allowed_headers ##
-      #
-      # A list of non simple headers the client is allowed to use with cross-domain requests.
-      #
-      # Default value: Authorization,Content-Type,X-Session-Token
-      #
-      # Set this value using environment variables on
-      # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_ALLOWED_HEADERS=<value>
-      # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_ALLOWED_HEADERS=<value>
-      #
-      allowed_headers:
-        - ''
-
-      ## exposed_headers ##
-      #
-      # Sets which headers are safe to expose to the API of a CORS API specification.
-      #
-      # Default value: Content-Type
-      #
-      # Set this value using environment variables on
-      # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_EXPOSED_HEADERS=<value>
-      # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_EXPOSED_HEADERS=<value>
-      #
-      exposed_headers:
-        - ''
-
-      ## allow_credentials ##
-      #
-      # Sets whether the request can include user credentials like cookies, HTTP authentication or client side SSL certificates.
-      #
-      # Default value: true
-      #
-      # Set this value using environment variables on
-      # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_ALLOW_CREDENTIALS=<value>
-      # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_ALLOW_CREDENTIALS=<value>
-      #
-      allow_credentials: false
-
-      ## options_passthrough ##
-      #
-      # TODO
+      # Disable request logging for /health/alive and /health/ready endpoints
       #
       # Default value: false
       #
       # Set this value using environment variables on
       # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_OPTIONS_PASSTHROUGH=<value>
+      #    $ export SERVE_PUBLIC_REQUEST_LOG_DISABLE_FOR_HEALTH=<value>
       # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_OPTIONS_PASSTHROUGH=<value>
+      #    > set SERVE_PUBLIC_REQUEST_LOG_DISABLE_FOR_HEALTH=<value>
       #
-      options_passthrough: false
-
-      ## max_age ##
-      #
-      # Sets how long (in seconds) the results of a preflight request can be cached. If set to 0, every request is preceded by a preflight request.
-      #
-      # Minimum value: 0
-      #
-      # Set this value using environment variables on
-      # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_MAX_AGE=<value>
-      # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_MAX_AGE=<value>
-      #
-      max_age: 0
-
-      ## debug ##
-      #
-      # Adds additional log output to debug server side CORS issues.
-      #
-      # Default value: false
-      #
-      # Set this value using environment variables on
-      # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_DEBUG=<value>
-      # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_DEBUG=<value>
-      #
-      debug: false
-
-      ## enabled ##
-      #
-      # Sets whether CORS is enabled.
-      #
-      # Default value: false
-      #
-      # Set this value using environment variables on
-      # - Linux/macOS:
-      #    $ export SERVE_PUBLIC_CORS_ENABLED=<value>
-      # - Windows Command Line (CMD):
-      #    > set SERVE_PUBLIC_CORS_ENABLED=<value>
-      #
-      enabled: false
+      disable_for_health: false
 
   ## admin ##
   #
   admin:
+    ## Admin Base URL ##
+    #
+    # The URL where the admin endpoint is exposed at.
+    #
+    # Examples:
+    # - https://kratos.private-network:4434/
+    #
+    # Set this value using environment variables on
+    # - Linux/macOS:
+    #    $ export SERVE_ADMIN_BASE_URL=<value>
+    # - Windows Command Line (CMD):
+    #    > set SERVE_ADMIN_BASE_URL=<value>
+    #
+    base_url: https://kratos.private-network:4434/
+
     ## Admin Host ##
     #
     # The host (interface) kratos' admin endpoint listens on.
@@ -1501,20 +1683,22 @@ serve:
         #
         path: path/to/file.pem
 
-    ## Admin Base URL ##
+    ## request_log ##
     #
-    # The URL where the admin endpoint is exposed at.
-    #
-    # Examples:
-    # - https://kratos.private-network:4434/
-    #
-    # Set this value using environment variables on
-    # - Linux/macOS:
-    #    $ export SERVE_ADMIN_BASE_URL=<value>
-    # - Windows Command Line (CMD):
-    #    > set SERVE_ADMIN_BASE_URL=<value>
-    #
-    base_url: https://kratos.private-network:4434/
+    request_log:
+      ## Disable health endpoints request logging ##
+      #
+      # Disable request logging for /health/alive and /health/ready endpoints
+      #
+      # Default value: false
+      #
+      # Set this value using environment variables on
+      # - Linux/macOS:
+      #    $ export SERVE_ADMIN_REQUEST_LOG_DISABLE_FOR_HEALTH=<value>
+      # - Windows Command Line (CMD):
+      #    > set SERVE_ADMIN_REQUEST_LOG_DISABLE_FOR_HEALTH=<value>
+      #
+      disable_for_health: false
 
 ## tracing ##
 #
@@ -1726,6 +1910,19 @@ secrets:
   cookie:
     - ipsumipsumipsumi
 
+  ## Secrets to use for encryption by cipher ##
+  #
+  # The first secret in the array is used for encryption data while all other keys are used to decrypt older data that were signed with.
+  #
+  # Set this value using environment variables on
+  # - Linux/macOS:
+  #    $ export SECRETS_CIPHER=<value>
+  # - Windows Command Line (CMD):
+  #    > set SECRETS_CIPHER=<value>
+  #
+  cipher:
+    - ipsumipsumipsumipsumipsumipsumip
+
   ## Default Encryption Signing Secrets ##
   #
   # The first secret in the array is used for signing and encrypting things while all other keys are used to verify and decrypt older things that were signed with that old secret.
@@ -1876,7 +2073,8 @@ hashers:
 
   ## Password hashing algorithm ##
   #
-  # One of the values: argon2, bcrypt
+  # One of the values: argon2, bcrypt.
+  # Any other hashes will be migrated to the set algorithm once an identity authenticates using their password.
   #
   # Default value: bcrypt
   #
@@ -1891,6 +2089,28 @@ hashers:
   #    > set HASHERS_ALGORITHM=<value>
   #
   algorithm: argon2
+
+## Cipher Algorithm Configuration ##
+#
+ciphers:
+  ## ciphering algorithm ##
+  #
+  # One of the values: noop, aes, xchacha20-poly1305
+  #
+  # Default value: noop
+  #
+  # One of:
+  # - noop
+  # - aes
+  # - xchacha20-poly1305
+  #
+  # Set this value using environment variables on
+  # - Linux/macOS:
+  #    $ export CIPHERS_ALGORITHM=<value>
+  # - Windows Command Line (CMD):
+  #    > set CIPHERS_ALGORITHM=<value>
+  #
+  algorithm: noop
 
 ## HTTP Cookie Configuration ##
 #
@@ -1945,6 +2165,25 @@ cookies:
 ## session ##
 #
 session:
+  ## Session Lifespan ##
+  #
+  # Defines how long a session is active. Once that lifespan has been reached, the user needs to sign in again.
+  #
+  # Default value: 24h
+  #
+  # Examples:
+  # - 1h
+  # - 1m
+  # - 1s
+  #
+  # Set this value using environment variables on
+  # - Linux/macOS:
+  #    $ export SESSION_LIFESPAN=<value>
+  # - Windows Command Line (CMD):
+  #    > set SESSION_LIFESPAN=<value>
+  #
+  lifespan: 1h
+
   ## cookie ##
   #
   cookie:
@@ -2017,24 +2256,28 @@ session:
     #
     domain: ''
 
-  ## Session Lifespan ##
+  ## WhoAmI / ToSession Settings ##
   #
-  # Defines how long a session is active. Once that lifespan has been reached, the user needs to sign in again.
+  # Control how the `/sessions/whoami` endpoint is behaving.
   #
-  # Default value: 24h
-  #
-  # Examples:
-  # - 1h
-  # - 1m
-  # - 1s
-  #
-  # Set this value using environment variables on
-  # - Linux/macOS:
-  #    $ export SESSION_LIFESPAN=<value>
-  # - Windows Command Line (CMD):
-  #    > set SESSION_LIFESPAN=<value>
-  #
-  lifespan: 1h
+  whoami:
+    ## Required Authenticator Assurance Level ##
+    #
+    # Sets what Authenticator Assurance Level (used for 2FA) is required to access this feature. If set to `highest_available` then this endpoint requires the highest AAL the identity has set up. If set to `aal1` then the identity can access this feature without 2FA.
+    #
+    # Default value: highest_available
+    #
+    # One of:
+    # - aal1
+    # - highest_available
+    #
+    # Set this value using environment variables on
+    # - Linux/macOS:
+    #    $ export SESSION_WHOAMI_REQUIRED_AAL=<value>
+    # - Windows Command Line (CMD):
+    #    > set SESSION_WHOAMI_REQUIRED_AAL=<value>
+    #
+    required_aal: aal1
 
 ## The kratos version this config is written for. ##
 #
@@ -2143,10 +2386,20 @@ courier:
   smtp:
     ## SMTP connection string ##
     #
-    # This URI will be used to connect to the SMTP server. Use the query parameter to allow (`?skip_ssl_verify=true`) or disallow (`?skip_ssl_verify=false`) self-signed TLS certificates. Please keep in mind that any host other than localhost / 127.0.0.1 must use smtp over TLS (smtps) or the connection will not be possible.
+    # This URI will be used to connect to the SMTP server. Use the scheme smtps for implicit TLS sessions or smtp for explicit StartTLS/cleartext sessions. Please note that TLS is always enforced with certificate trust verification by default for security reasons on both schemes. With the smtp scheme you can use the query parameter (`?disable_starttls=true`) to allow cleartext sessions or (`?disable_starttls=false`) to enforce StartTLS (default behaviour). Additionally, use the query parameter to allow (`?skip_ssl_verify=true`) or disallow (`?skip_ssl_verify=false`) self-signed TLS certificates (default behaviour) on both implicit and explicit TLS sessions.
     #
     # Examples:
     # - smtps://foo:bar@my-mailserver:1234/?skip_ssl_verify=false
+    # - "smtp://foo:bar@my-mailserver:1234/?disable_starttls=true (NOT RECOMMENDED:
+    #   Cleartext smtp for devel and legacy infrastructure only)"
+    # - smtp://foo:bar@my-mailserver:1234/ (Explicit StartTLS with certificate trust
+    #   verification)
+    # - "smtp://foo:bar@my-mailserver:1234/?skip_ssl_verify=true (NOT RECOMMENDED:
+    #   Explicit StartTLS without certificate trust verification)"
+    # - smtps://foo:bar@my-mailserver:1234/ (Implicit TLS with certificate trust
+    #   verification)
+    # - "smtps://foo:bar@my-mailserver:1234/?skip_ssl_verify=true (NOT RECOMMENDED:
+    #   Implicit TLS without certificate trust verification)"
     #
     # Set this value using environment variables on
     # - Linux/macOS:
