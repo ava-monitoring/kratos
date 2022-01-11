@@ -54,6 +54,41 @@ func (p *Persister) CreateRecoveryToken(ctx context.Context, token *link.Recover
 	return nil
 }
 
+// Added
+func (p *Persister) GetRecoveryToken(ctx context.Context, token string) (*link.RecoveryToken, error) {
+	var rt link.RecoveryToken
+	
+	nid := corp.ContextualizeNID(ctx, p.nid)
+	if err := sqlcon.HandleError(p.Transaction(ctx, func(ctx context.Context, tx *pop.Connection) (err error) {
+		for _, secret := range p.r.Config(ctx).SecretsSession() {
+			if err = tx.Where("token = ? AND nid = ? AND NOT used", p.hmacValueWithSecret(token, secret), nid).First(&rt); err != nil {
+				if !errors.Is(sqlcon.HandleError(err), sqlcon.ErrNoRows) {
+					return err
+				}
+			} else {
+				break
+			}
+		}
+		if err != nil {
+			return err
+		}
+
+		var ra identity.RecoveryAddress
+		if err := tx.Where("id = ? AND nid = ?", rt.RecoveryAddressID, nid).First(&ra); err != nil {
+			return sqlcon.HandleError(err)
+		}
+
+		rt.RecoveryAddress = &ra
+		return nil
+
+	})); err != nil {
+		return nil, err
+	}
+
+	return &rt, nil
+}
+
+
 func (p *Persister) UseRecoveryToken(ctx context.Context, token string) (*link.RecoveryToken, error) {
 	var rt link.RecoveryToken
 

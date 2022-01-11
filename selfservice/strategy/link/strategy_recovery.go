@@ -216,14 +216,12 @@ func (s *Strategy) Recover(w http.ResponseWriter, r *http.Request, f *recovery.F
 		if err := flow.MethodEnabledAndAllowed(r.Context(), s.RecoveryStrategyID(), s.RecoveryStrategyID(), s.d); err != nil {
 			return s.HandleRecoveryError(w, r, nil, body, err)
 		}
-
 		return s.recoveryUseToken(w, r, body)
 	}
-
 	if err := flow.MethodEnabledAndAllowed(r.Context(), s.RecoveryStrategyID(), body.Method, s.d); err != nil {
 		return s.HandleRecoveryError(w, r, nil, body, err)
 	}
-
+	
 	req, err := s.d.RecoveryFlowPersister().GetRecoveryFlow(r.Context(), x.ParseUUID(body.Flow))
 	if err != nil {
 		return s.HandleRecoveryError(w, r, req, body, err)
@@ -286,7 +284,8 @@ func (s *Strategy) recoveryIssueSession(w http.ResponseWriter, r *http.Request, 
 }
 
 func (s *Strategy) recoveryUseToken(w http.ResponseWriter, r *http.Request, body *recoverySubmitPayload) error {
-	token, err := s.d.RecoveryTokenPersister().UseRecoveryToken(r.Context(), body.Token)
+	//token, err := s.d.RecoveryTokenPersister().UseRecoveryToken(r.Context(), body.Token)
+	token, err := s.d.RecoveryTokenPersister().GetRecoveryToken(r.Context(), body.Token)
 	if err != nil {
 		if errors.Is(err, sqlcon.ErrNoRows) {
 			return s.retryRecoveryFlowWithMessage(w, r, flow.TypeBrowser, text.NewErrorValidationRecoveryTokenInvalidOrAlreadyUsed())
@@ -398,10 +397,11 @@ func (s *Strategy) recoveryHandleFormSubmission(w http.ResponseWriter, r *http.R
 	if err := flow.EnsureCSRF(s.d, r, f.Type, s.d.Config(r.Context()).DisableAPIFlowEnforcement(), s.d.GenerateCSRFToken, body.CSRFToken); err != nil {
 		return s.HandleRecoveryError(w, r, f, body, err)
 	}
-
-	if err := s.d.LinkSender().SendRecoveryLink(r.Context(), r, f, identity.VerifiableAddressTypeEmail, body.Email); err != nil {
-		if !errors.Is(err, ErrUnknownAddress) {
-			return s.HandleRecoveryError(w, r, f, body, err)
+	
+	if err := s.d.LinkSender().SendRecoveryLink(r.Context(), r, req, identity.VerifiableAddressTypeEmail, body.Email); err != nil {
+		//if !errors.Is(err, ErrUnknownAddress) {
+		if errors.Is(err, ErrUnknownAddress) {
+			return s.HandleRecoveryError(w, r, req, body, err)
 		}
 		// Continue execution
 	}
