@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ory/kratos/cmd/cleanup"
+
 	"github.com/ory/kratos/driver/config"
 
 	"github.com/ory/kratos/cmd/courier"
@@ -26,15 +28,19 @@ func NewRootCmd() (cmd *cobra.Command) {
 	cmd = &cobra.Command{
 		Use: "kratos",
 	}
-	identities.RegisterCommandRecursive(cmd)
-
-	jsonnet.RegisterCommandRecursive(cmd)
-	serve.RegisterCommandRecursive(cmd)
-	migrate.RegisterCommandRecursive(cmd)
-	remote.RegisterCommandRecursive(cmd)
-	hashers.RegisterCommandRecursive(cmd)
 	courier.RegisterCommandRecursive(cmd)
-
+	cmd.AddCommand(identities.NewGetCmd(cmd))
+	cmd.AddCommand(identities.NewDeleteCmd(cmd))
+	cmd.AddCommand(jsonnet.NewFormatCmd())
+	hashers.RegisterCommandRecursive(cmd)
+	cmd.AddCommand(identities.NewImportCmd(cmd))
+	cmd.AddCommand(jsonnet.NewLintCmd())
+	cmd.AddCommand(identities.NewListCmd(cmd))
+	migrate.RegisterCommandRecursive(cmd)
+	serve.RegisterCommandRecursive(cmd)
+	cleanup.RegisterCommandRecursive(cmd)
+	remote.RegisterCommandRecursive(cmd)
+	cmd.AddCommand(identities.NewValidateCmd())
 	cmd.AddCommand(cmdx.Version(&config.Version, &config.Commit, &config.Date))
 
 	return cmd

@@ -14,26 +14,40 @@
 ---
 
 <p align="left">
-    <a href="https://circleci.com/gh/ory/kratos/tree/master"><img src="https://circleci.com/gh/ory/kratos/tree/master.svg?style=shield" alt="Build Status"></a>
-    <a href="https://coveralls.io/github/ory/kratos?branch=master"> <img src="https://coveralls.io/repos/ory/kratos/badge.svg?branch=master&service=github" alt="Coverage Status"></a>
-    <a href="https://goreportcard.com/report/github.com/ory/kratos"><img src="https://goreportcard.com/badge/github.com/ory/kratos" alt="Go Report Card"></a>
+    <a href="https://github.com/ory/kratos/actions/workflows/ci.yaml"><img src="https://github.com/ory/kratos/actions/workflows/ci.yaml/badge.svg?branch=master&event=push" alt="CI Tasks for Ory Kratos"></a>
+    <a href="https://codecov.io/gh/ory/kratos"><img src="https://codecov.io/gh/ory/kratos/branch/master/graph/badge.svg?token=6t0QqOdurR"/></a>
     <a href="https://bestpractices.coreinfrastructure.org/projects/4979"><img src="https://bestpractices.coreinfrastructure.org/projects/4979/badge" alt="CII Best Practices"></a>
     <a href="https://opencollective.com/ory" alt="sponsors on Open Collective"><img src="https://opencollective.com/ory/backers/badge.svg" /></a>
     <a href="https://opencollective.com/ory" alt="Sponsors on Open Collective"><img src="https://opencollective.com/ory/sponsors/badge.svg" /></a>
     <a href="https://github.com/ory/kratos/blob/master/CODE_OF_CONDUCT.md" alt="Ory Code of Conduct"><img src="https://img.shields.io/badge/ory-code%20of%20conduct-green" /></a>
-</p>
+</>
 
 Ory Kratos is the first cloud native Identity and User Management System in the world. Finally, it is no longer necessary to implement a User Login process for the umpteenth time!
 
-## Ory Cloud
+## Ory Kratos in Ory Cloud
 
-The easiest way to get started with Ory Software is in Ory Cloud! It is [**free for developers**](https://console.ory.sh/registration?utm_source=github&utm_medium=banner&utm_campaign=kratos-readme), forever, no credit card required!
+The easiest way to get started with Ory Software is in Ory Cloud!
+Ory Cloud is [**free forever for developers**](https://console.ory.sh/registration?utm_source=github&utm_medium=banner&utm_campaign=kratos-readme), no credit card required.
 
-Ory Cloud has easy examples, administrative user interfaces, hosted pages (e.g. for login or registration), support for custom domains, collaborative features for your colleagues, and much more!
+Install the [Ory CLI](https://www.ory.sh/docs/guides/cli/installation) and create a new project to get started with Ory Kratos right away:
+
+```
+# If you don't have Ory CLI installed yet:
+bash <(curl https://raw.githubusercontent.com/ory/meta/master/install.sh) -b . ory
+sudo mv ./ory /usr/local/bin/
+
+# Sign up
+ory auth
+
+# Create project
+ory create project
+```
+
+Ory Cloud ships administrative user interfaces, hosted pages (e.g. for login or registration), support for custom domains, collaborative features for your colleagues, integration services, and much more!
 
 ### :mega: Community gets Ory Cloud for Free! :mega:
 
-Ory community members get the Ory Cloud Start Up plan **free for six months**, with all quality-of-life features available, such as custom domains and giving your team members access. [Sign up with your GitHub account](https://console.ory.sh/registration?preferred_plan=start-up&utm_source=github&utm_medium=banner&utm_campaign=kratos-readme-first900) and use the coupon code **`FIRST900`** on the *"Start-Up Plan"* checkout page to calim your free project now! Make sure to be signed up to the [Ory Community Slack](https://slack.ory.sh) when using the code!
+Ory community members get the Ory Cloud Start Up plan **free for half a year**, with all quality-of-life features available, such as custom domains and giving your team members access. [Sign up with your GitHub account](https://console.ory.sh/registration?preferred_plan=start-up&utm_source=github&utm_medium=banner&utm_campaign=kratos-readme-first900) and use the coupon code **`FIRST900`** on the *"Start-Up Plan"* checkout page to claim your free project now! Make sure to be signed up to the [Ory Community Slack](https://slack.ory.sh) when using the code!
 
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -43,7 +57,6 @@ Ory community members get the Ory Cloud Start Up plan **free for six months**, w
 - [What is Ory Kratos?](#what-is-ory-kratos)
   - [Who is using it?](#who-is-using-it)
 - [Getting Started](#getting-started)
-  - [Quickstart](#quickstart)
   - [Installation](#installation)
 - [Ecosystem](#ecosystem)
   - [Ory Kratos: Identity and User Infrastructure and Management](#ory-kratos-identity-and-user-infrastructure-and-management)
@@ -65,9 +78,11 @@ Ory community members get the Ory Cloud Start Up plan **free for six months**, w
     - [Running Tests](#running-tests)
       - [Short Tests](#short-tests)
       - [Regular Tests](#regular-tests)
+      - [Updating Test Fixtures](#updating-test-fixtures)
       - [End-to-End Tests](#end-to-end-tests)
     - [Build Docker](#build-docker)
     - [Documentation Tests](#documentation-tests)
+    - [Preview API documentation](#preview-api-documentation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -313,12 +328,7 @@ TheCrealm.
 
 ## Getting Started
 
-To get started, head over to the [Ory Kratos Documentation](https://www.ory.sh/kratos/docs).
-
-### Quickstart
-
-The **[Ory Kratos Quickstart](https://www.ory.sh/kratos/docs/quickstart)** teaches you Ory Kratos basics
-and sets up an example based on Docker Compose in less than five minutes.
+To get started with some easy examples, head over to the [Get Started Documentation](https://www.ory.sh/docs/guides/protect-page-login/).
 
 ### Installation
 
@@ -517,6 +527,15 @@ Some tests use fixtures. If payloads change, you can update them with:
 make test-update-snapshots
 ```
 
+This will only update the snapshots of the short tests. To update all snapshots,
+run:
+
+```bash
+UPDATE_SNAPSHOTS=true go test -p 4 -tags sqlite ./...
+```
+
+You can also run this command from a sub folder.
+
 ##### End-to-End Tests
 
 We use [Cypress](https://www.cypress.io) to run our e2e tests.
@@ -578,3 +597,12 @@ To prepare documentation tests, run `npm i` to install
 
 - test all documentation: <code type="make/command">make test-docs</code>
 - test an individual file: <code type="npm/installed-executable">text-run</code>
+
+#### Preview API documentation
+
+- update the SDK including the OpenAPI specification:
+  <code type="make/command">make sdk</code>
+- run preview server for API documentation: <code type="make/command">make
+  docs/api</code>
+- run preview server for swagger documentation: <code type="make/command">make
+  docs/swagger</code>
