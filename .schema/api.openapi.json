@@ -294,17 +294,34 @@
         "type": "object"
       },
       "completeSelfServiceVerificationFlowWithLinkMethod": {
-        "properties": {
-          "csrf_token": {
-            "description": "Sending the anti-csrf token is only required for browser login flows.",
-            "type": "string"
-          },
-          "email": {
-            "description": "Email to Verify\n\nNeeds to be set when initiating the flow. If the email is a registered\nverification email, a verification link will be sent. If the email is not known,\na email with details on what happened will be sent instead.\n\nformat: email\nin: body",
-            "type": "string"
-          }
-        },
-        "type": "object"
+	    "oneOf": [
+		  {
+		    "properties": {
+              "csrf_token": {
+                "description": "Sending the anti-csrf token is only required for browser login flows.",
+                "type": "string"
+              },
+			  "email": {
+                "description": "Email to Verify\n\nNeeds to be set when initiating the flow. If the email is a registered\nverification email, a verification link will be sent. If the email is not known,\na email with details on what happened will be sent instead.\n\nformat: email\nin: body",
+                "type": "string"
+              }
+		    },
+			"type": "object"
+		  },
+		  {
+		    "properties": {
+              "csrf_token": {
+                "description": "Sending the anti-csrf token is only required for browser login flows.",
+                "type": "string"
+              },
+			  "phone": {
+                "description": "Phone to Verify\n\nNeeds to be set when initiating the flow. If the phone is a registered\nverification phone, a verification link will be sent. If the phone is not known,\nas sms with details on what happened will be sent instead.\n\nformat: string\nin: body",
+                "type": "string"
+              }
+		    },
+			"type": "object"
+		  }
+		]
       },
       "errorContainer": {
         "properties": {

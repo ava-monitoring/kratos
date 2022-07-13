@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ory/kratos/identity"
-	"github.com/ory/kratos/schema"
+	//"github.com/ory/kratos/schema"
 	"github.com/ory/kratos/selfservice/flow"
 	"github.com/ory/kratos/selfservice/flow/verification"
 	"github.com/ory/kratos/text"
@@ -34,8 +34,12 @@ func (s *Strategy) PopulateVerificationMethod(r *http.Request, f *verification.F
 	f.UI.SetCSRF(s.d.GenerateCSRFToken(r))
 	f.UI.GetNodes().Upsert(
 		// v0.5: form.Field{Name: "email", Type: "email", Required: true}
-		node.NewInputField("email", nil, node.VerificationLinkGroup, node.InputAttributeTypeEmail, node.WithRequiredInputAttribute).WithMetaLabel(text.NewInfoNodeInputEmail()),
+		node.NewInputField("email", nil, node.VerificationLinkGroup, node.InputAttributeTypeEmail).WithMetaLabel(text.NewInfoNodeInputEmail()),
 	)
+	f.UI.GetNodes().Upsert(
+		node.NewInputField("phone", nil, node.VerificationLinkGroup, node.InputAttributeTypePhone).WithMetaLabel(text.NewInfoNodeInputPhone()),
+	)
+	
 	f.UI.GetNodes().Append(node.NewInputField("method", s.VerificationStrategyID(), node.VerificationLinkGroup, node.InputAttributeTypeSubmit).WithMetaLabel(text.NewInfoNodeLabelSubmit()))
 	return nil
 }
@@ -46,11 +50,12 @@ type verificationSubmitPayload struct {
 	CSRFToken string `json:"csrf_token" form:"csrf_token"`
 	Flow      string `json:"flow" form:"flow"`
 	Email     string `json:"email" form:"email"`
+	Phone     string `json:"phone" form:"phone"`
 }
 
 func (s *Strategy) decodeVerification(r *http.Request) (*verificationSubmitPayload, error) {
 	var body verificationSubmitPayload
-
+  
 	compiler, err := decoderx.HTTPRawJSONSchemaCompiler(verificationMethodSchema)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -65,7 +70,7 @@ func (s *Strategy) decodeVerification(r *http.Request) (*verificationSubmitPaylo
 	); err != nil {
 		return nil, errors.WithStack(err)
 	}
-
+  
 	return &body, nil
 }
 
@@ -75,7 +80,11 @@ func (s *Strategy) handleVerificationError(w http.ResponseWriter, r *http.Reques
 		f.UI.SetCSRF(s.d.GenerateCSRFToken(r))
 		f.UI.GetNodes().Upsert(
 			// v0.5: form.Field{Name: "email", Type: "email", Required: true, Value: body.Body.Email}
-			node.NewInputField("email", body.Email, node.VerificationLinkGroup, node.InputAttributeTypeEmail, node.WithRequiredInputAttribute),
+			//node.NewInputField("email", body.Email, node.VerificationLinkGroup, node.InputAttributeTypeEmail, node.WithRequiredInputAttribute),
+			node.NewInputField("email", body.Email, node.VerificationLinkGroup, node.InputAttributeTypeEmail),
+		)
+		f.UI.GetNodes().Upsert(
+			node.NewInputField("phone", nil, node.VerificationLinkGroup, node.InputAttributeTypePhone).WithMetaLabel(text.NewInfoNodeInputPhone()),
 		)
 	}
 
@@ -94,6 +103,8 @@ type submitSelfServiceVerificationFlowWithLinkMethodBody struct {
 	// format: email
 	// required: true
 	Email string `json:"email"`
+	
+	Phone string `json:"phone"`
 
 	// Sending the anti-csrf token is only required for browser login flows.
 	CSRFToken string `form:"csrf_token" json:"csrf_token"`
@@ -134,6 +145,9 @@ func (s *Strategy) Verify(w http.ResponseWriter, r *http.Request, f *verificatio
 	case verification.StateEmailSent:
 		// Do nothing (continue with execution after this switch statement)
 		return s.verificationHandleFormSubmission(w, r, f)
+  case verification.StateSmsSent:
+    // Do nothing (continue with execution after this switch statement)
+		return s.verificationHandleFormSubmission(w, r, f)
 	case verification.StatePassedChallenge:
 		return s.retryVerificationFlowWithMessage(w, r, f.Type, text.NewErrorValidationVerificationRetrySuccess())
 	default:
@@ -148,30 +162,52 @@ func (s *Strategy) verificationHandleFormSubmission(w http.ResponseWriter, r *ht
 		return s.handleVerificationError(w, r, f, body, err)
 	}
 
-	if len(body.Email) == 0 {
-		return s.handleVerificationError(w, r, f, body, schema.NewRequiredError("#/email", "email"))
-	}
+	//if len(body.Email) == 0 {
+	//	return s.handleVerificationError(w, r, f, body, schema.NewRequiredError("#/email", "email"))
+	//}
 
 	if err := flow.EnsureCSRF(s.d, r, f.Type, s.d.Config(r.Context()).DisableAPIFlowEnforcement(), s.d.GenerateCSRFToken, body.CSRFToken); err != nil {
 		return s.handleVerificationError(w, r, f, body, err)
 	}
-
-	if err := s.d.LinkSender().SendVerificationLink(r.Context(), f, identity.VerifiableAddressTypeEmail, body.Email); err != nil {
-		if !errors.Is(err, ErrUnknownAddress) {
-			return s.handleVerificationError(w, r, f, body, err)
-		}
-		// Continue execution
-	}
+  
+  if len(body.Email) != 0 {
+	  if err := s.d.LinkSender().SendVerificationLink(r.Context(), f, identity.VerifiableAddressTypeEmail, body.Email); err != nil {
+		  if !errors.Is(err, ErrUnknownAddress) {
+			  return s.handleVerificationError(w, r, f, body, err)
+		  }
+		  // Continue execution
+	  }
+  } else {
+    if err := s.d.LinkSender().SendVerificationLink(r.Context(), f, identity.VerifiableAddressTypePhone, body.Phone); err != nil {
+		  if !errors.Is(err, ErrUnknownAddress) {
+			  return s.handleVerificationError(w, r, f, body, err)
+		  }
+		  // Continue execution
+	  }
+  }
 
 	f.UI.SetCSRF(s.d.GenerateCSRFToken(r))
 	f.UI.GetNodes().Upsert(
 		// v0.5: form.Field{Name: "email", Type: "email", Required: true, Value: body.Body.Email}
-		node.NewInputField("email", body.Email, node.VerificationLinkGroup, node.InputAttributeTypeEmail, node.WithRequiredInputAttribute),
+		node.NewInputField("email", body.Email, node.VerificationLinkGroup, node.InputAttributeTypeEmail),
+	)
+	f.UI.GetNodes().Upsert(
+		node.NewInputField("phone", nil, node.VerificationLinkGroup, node.InputAttributeTypePhone).WithMetaLabel(text.NewInfoNodeInputPhone()),
 	)
 
 	f.Active = sqlxx.NullString(s.VerificationNodeGroup())
-	f.State = verification.StateEmailSent
-	f.UI.Messages.Set(text.NewVerificationEmailSent())
+	
+	if len(body.Email) != 0 {
+		f.State = verification.StateEmailSent
+		f.UI.Messages.Set(text.NewVerificationEmailSent())
+	} else {
+		f.State = verification.StateSmsSent
+		f.UI.Messages.Set(text.NewVerificationSmsSent())
+	}
+	
+	//f.State = verification.StateEmailSent
+	//f.UI.Messages.Set(text.NewVerificationEmailSent())
+	
 	if err := s.d.VerificationFlowPersister().UpdateVerificationFlow(r.Context(), f); err != nil {
 		return s.handleVerificationError(w, r, f, body, err)
 	}

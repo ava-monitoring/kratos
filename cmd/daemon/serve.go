@@ -161,7 +161,7 @@ func ServeAdmin(r driver.Registry, wg *sync.WaitGroup, cmd *cobra.Command, args 
 		"admin#"+c.SelfPublicURL().String(),
 	)
 	if r.Config(ctx).DisableAdminHealthRequestLog() {
-		adminLogger.ExcludePaths(healthx.AliveCheckPath, healthx.ReadyCheckPath)
+		adminLogger.ExcludePaths(x.AdminPrefix+healthx.AliveCheckPath, x.AdminPrefix+healthx.ReadyCheckPath)
 	}
 	n.Use(adminLogger)
 	n.UseFunc(x.RedirectAdminMiddleware)

@@ -64,6 +64,7 @@ const (
 	InfoSelfServiceRecovery           ID = 1060000 + iota // 1060000
 	InfoSelfServiceRecoverySuccessful                     // 1060001
 	InfoSelfServiceRecoveryEmailSent                      // 1060002
+	InfoSelfServiceVerificationSmsSent                    // 1060003
 )
 
 const (
@@ -75,6 +76,7 @@ const (
 	InfoNodeLabelSubmit                            // 1070005
 	InfoNodeLabelVerifyOTP                         // 1070006
 	InfoNodeLabelEmail                             // 1070007
+	InfoNodeLabelPhone                             // 1070008
 )
 
 const (

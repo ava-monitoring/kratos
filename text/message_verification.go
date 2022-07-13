@@ -33,6 +33,15 @@ func NewVerificationEmailSent() *Message {
 	}
 }
 
+func NewVerificationSmsSent() *Message {
+	return &Message{
+		ID:      InfoSelfServiceVerificationSmsSent,
+		Type:    Info,
+		Text:    "An SMS containing a verification link has been sent to the phone number you provided.",
+		Context: context(nil),
+	}
+}
+
 func NewErrorValidationVerificationTokenInvalidOrAlreadyUsed() *Message {
 	return &Message{
 		ID:      ErrorValidationVerificationTokenInvalidOrAlreadyUsed,

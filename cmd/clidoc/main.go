@@ -69,6 +69,7 @@ func init() {
 		"NewErrorValidationVerificationFlowExpired":               text.NewErrorValidationVerificationFlowExpired(-time.Second),
 		"NewInfoSelfServiceVerificationSuccessful":                text.NewInfoSelfServiceVerificationSuccessful(),
 		"NewVerificationEmailSent":                                text.NewVerificationEmailSent(),
+		"NewVerificationSmsSent":                                  text.NewVerificationSmsSent(),
 		"NewErrorValidationVerificationTokenInvalidOrAlreadyUsed": text.NewErrorValidationVerificationTokenInvalidOrAlreadyUsed(),
 		"NewErrorValidationVerificationRetrySuccess":              text.NewErrorValidationVerificationRetrySuccess(),
 		"NewErrorValidationVerificationStateFailure":              text.NewErrorValidationVerificationStateFailure(),
